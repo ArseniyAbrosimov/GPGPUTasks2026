@@ -36,6 +36,11 @@ void prefix_sum_02_prefix_accumulation(const gpu::WorkSize &workSize,
     // dummy implementation if CUDA_SUPPORT is disabled
     rassert(false, 546237686412414);
 }
+void add_upper(const gpu::WorkSize &workSize, gpu::gpu_mem_32u &prefix, const gpu::gpu_mem_32u &upper)
+{
+    // dummy implementation if CUDA_SUPPORT is disabled
+    rassert(false, 54623523412413);
+}
 } // namespace cuda
 #endif
 

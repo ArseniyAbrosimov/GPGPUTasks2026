@@ -53,6 +53,14 @@ __global__ void add_block_acc(unsigned int* next_pow2_sum,
     next_pow2_sum[gid] += block_acc[blockIdx.x];
 }
 
+__global__ void add_upper(unsigned int* prefix,
+                          const unsigned int* upper)
+{
+    const unsigned int gid = blockIdx.x * blockDim.x + threadIdx.x;
+    if (blockIdx.x > 0)
+        prefix[gid] += upper[blockIdx.x - 1];
+}
+
 namespace cuda {
 void prefix_sum_02_prefix_accumulation(const gpu::WorkSize &workSize,
             const gpu::gpu_mem_32u &block_sum, gpu::gpu_mem_32u &block_acc, gpu::gpu_mem_32u &next_pow2_sum)
@@ -66,6 +74,15 @@ void prefix_sum_02_prefix_accumulation(const gpu::WorkSize &workSize,
     CUDA_CHECK_KERNEL(stream);
 
     ::add_block_acc<<<workSize.cuGridSize(), workSize.cuBlockSize(), 0, stream>>>(next_pow2_sum.cuptr(), block_acc.cuptr());
+    CUDA_CHECK_KERNEL(stream);
+}
+
+void add_upper(const gpu::WorkSize &workSize, gpu::gpu_mem_32u &prefix, const gpu::gpu_mem_32u &upper)
+{
+    gpu::Context context;
+    rassert(context.type() == gpu::Context::TypeCUDA, 34523543124312, context.type());
+    cudaStream_t stream = context.cudaStream();
+    ::add_upper<<<workSize.cuGridSize(), workSize.cuBlockSize(), 0, stream>>>(prefix.cuptr(), upper.cuptr());
     CUDA_CHECK_KERNEL(stream);
 }
 } // namespace cuda

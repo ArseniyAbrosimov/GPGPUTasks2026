@@ -69,7 +69,9 @@ void run(int argc, char** argv)
 
     // Аллоцируем буферы в VRAM
     // gpu::gpu_mem_32u input_gpu(n), buffer1_pow2_sum_gpu(n), buffer2_pow2_sum_gpu(n), prefix_sum_accum_gpu(n);
-    gpu::gpu_mem_32u input_gpu(n), buffer1_pow2_sum_gpu(n / GROUP_SIZE), buffer2_pow2_sum_gpu(n /GROUP_SIZE), prefix_sum_accum_gpu(n);
+    // gpu::gpu_mem_32u input_gpu(n), buffer1_pow2_sum_gpu(390656), buffer2_pow2_sum_gpu(390656), prefix_sum_accum_gpu(n);
+    gpu::gpu_mem_32u input_gpu(n), buffer1_pow2_sum_gpu(390656), buffer2_pow2_sum_gpu(390656), prefix_sum_accum_gpu(n);
+    gpu::gpu_mem_32u buffer3_pow2_sum_gpu(1536), buffer4_pow2_sum_gpu(1536), buffer5_pow2_sum_gpu(256), buffer6_pow2_sum_gpu(256);
 
     // Прогружаем входные данные по PCI-E шине: CPU RAM -> GPU VRAM
     input_gpu.writeN(as.data(), n);
@@ -82,6 +84,8 @@ void run(int argc, char** argv)
         // Запускаем кернел, с указанием размера рабочего пространства и передачей всех аргументов
         // Если хотите - можете удалить ветвление здесь и оставить только тот код который соответствует вашему выбору API
         gpu::WorkSize workSize(GROUP_SIZE, n);
+        gpu::WorkSize workSize1(GROUP_SIZE, n / GROUP_SIZE);
+        gpu::WorkSize workSize2(GROUP_SIZE, n / GROUP_SIZE / GROUP_SIZE);
         
         if (context.type() == gpu::Context::TypeOpenCL) {
             // TODO
@@ -92,10 +96,16 @@ void run(int argc, char** argv)
         } else if (context.type() == gpu::Context::TypeCUDA) {
             // TODO
             // throw std::runtime_error(CODE_IS_NOT_IMPLEMENTED);
-            // cuda::fill_buffer_with_zeros();
+            cuda::fill_buffer_with_zeros(workSize1, buffer1_pow2_sum_gpu, 390656);
+            cuda::fill_buffer_with_zeros(workSize2, buffer3_pow2_sum_gpu, 1536);
+            cuda::fill_buffer_with_zeros(workSize2, buffer5_pow2_sum_gpu, 256);
 
             cuda::prefix_sum_01_reduction(workSize, input_gpu, prefix_sum_accum_gpu, buffer1_pow2_sum_gpu);
-            cuda::prefix_sum_02_prefix_accumulation(workSize, buffer1_pow2_sum_gpu, buffer2_pow2_sum_gpu, prefix_sum_accum_gpu);
+            cuda::prefix_sum_01_reduction(workSize1, buffer1_pow2_sum_gpu, buffer2_pow2_sum_gpu, buffer3_pow2_sum_gpu);
+            cuda::prefix_sum_01_reduction(workSize2, buffer3_pow2_sum_gpu, buffer4_pow2_sum_gpu, buffer5_pow2_sum_gpu);
+            cuda::prefix_sum_02_prefix_accumulation(workSize2, buffer5_pow2_sum_gpu, buffer6_pow2_sum_gpu, buffer4_pow2_sum_gpu);
+            cuda::add_upper(workSize1, buffer2_pow2_sum_gpu, buffer4_pow2_sum_gpu);
+            cuda::add_upper(workSize, prefix_sum_accum_gpu, buffer2_pow2_sum_gpu);
             // cuda::prefix_sum_02_prefix_accumulation();
         } else if (context.type() == gpu::Context::TypeVulkan) {
             // TODO
