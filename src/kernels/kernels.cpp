@@ -25,13 +25,13 @@ void fill_buffer_with_zeros(const gpu::WorkSize &workSize,
     rassert(false, 54623523412413);
 }
 void prefix_sum_01_reduction(const gpu::WorkSize &workSize,
-            const gpu::gpu_mem_32u &pow2_sum, gpu::gpu_mem_32u &next_pow2_sum, unsigned int n)
+            const gpu::gpu_mem_32u &input, gpu::gpu_mem_32u &prefix_sum, gpu::gpu_mem_32u &block_sums)
 {
     // dummy implementation if CUDA_SUPPORT is disabled
     rassert(false, 54623523412413);
 }
 void prefix_sum_02_prefix_accumulation(const gpu::WorkSize &workSize,
-            const gpu::gpu_mem_32u &pow2_sum, gpu::gpu_mem_32u &prefix_sum_accum, unsigned int n, unsigned int pow2)
+            const gpu::gpu_mem_32u &block_sums, gpu::gpu_mem_32u &block_offsets, gpu::gpu_mem_32u &prefix_sum)
 {
     // dummy implementation if CUDA_SUPPORT is disabled
     rassert(false, 546237686412414);
