@@ -17,7 +17,7 @@ __global__ void radix_sort_03_global_prefixes_scan_accumulation(
     if (blockIdx.x != 0 || threadIdx.x != 0)
         return;
 
-    const unsigned int bucket_total = block_prefixes[digit * padded_blocks + padded_blocks - 1];
+    const unsigned int bucket_total = block_prefixes[padded_blocks - 1];
 
     if (digit == 0)
         bucket_offsets[0] = 0;
