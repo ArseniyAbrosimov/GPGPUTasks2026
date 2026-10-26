@@ -6,26 +6,29 @@
 
 #include "helpers/rassert.cu"
 #include "../defines.h"
-
-__global__ void radix_sort_02_global_prefixes_scan_sum_reduction(
-    // это лишь шаблон! смело меняйте аргументы и используемые буфера! можете сделать даже больше кернелов, если это вызовет затруднения - смело спрашивайте в чате
-    // НЕ ПОДСТРАИВАЙТЕСЬ ПОД СИСТЕМУ! СВЕРНИТЕ С РЕЛЬС!! БУНТ!!! АНТИХАЙП!11!!1
-    // TODO try char
-    const unsigned int* buffer1,
-          unsigned int* buffer2,
-    unsigned int a1)
-{
-    // TODO
-}
+#include "../kernels.h"
 
 namespace cuda {
-void radix_sort_02_global_prefixes_scan_sum_reduction(const gpu::WorkSize &workSize,
-    const gpu::gpu_mem_32u &buffer1, gpu::gpu_mem_32u &buffer2, unsigned int a1)
+void radix_sort_02_global_prefixes_scan_sum_reduction(
+    const gpu::WorkSize &workSize_level0,
+    const gpu::WorkSize &workSize_level1,
+    const gpu::gpu_mem_32u &local_counts,
+    gpu::gpu_mem_32u &block_prefixes,
+    gpu::gpu_mem_32u &group_sums,
+    gpu::gpu_mem_32u &group_prefixes,
+    gpu::gpu_mem_32u &top_sums,
+    unsigned int digit,
+    unsigned int padded_blocks)
 {
     gpu::Context context;
     rassert(context.type() == gpu::Context::TypeCUDA, 34523543124312, context.type());
-    cudaStream_t stream = context.cudaStream();
-    ::radix_sort_02_global_prefixes_scan_sum_reduction<<<workSize.cuGridSize(), workSize.cuBlockSize(), 0, stream>>>(buffer1.cuptr(), buffer2.cuptr(), a1);
-    CUDA_CHECK_KERNEL(stream);
+
+    const size_t digit_offset = (size_t) digit * padded_blocks;
+    gpu::gpu_mem_32u counts_slice(local_counts, digit_offset);
+    gpu::gpu_mem_32u prefixes_slice(block_prefixes, digit_offset);
+
+    cuda::prefix_sum_01_reduction(workSize_level0, counts_slice, prefixes_slice, group_sums);
+
+    cuda::prefix_sum_01_reduction(workSize_level1, group_sums, group_prefixes, top_sums);
 }
 } // namespace cuda
